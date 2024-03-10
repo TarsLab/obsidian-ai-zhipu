@@ -1,0 +1,10 @@
+{
+	"id": "ai-zhipu",
+	"name": "AI Zhipu",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Using Zhipu AI by API key.",
+	"author": "Tarslab",
+	"authorUrl": "https://github.com/tarslab",
+	"isDesktopOnly": false
+}
