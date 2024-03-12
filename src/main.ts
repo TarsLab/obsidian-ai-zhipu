@@ -187,32 +187,36 @@ export default class AIZhipuPlugin extends Plugin {
 	findNextEmptyAssistBlock(editor: Editor, from: number) {
 		const fileText = editor.getValue()
 		const lines = fileText.split('\n')
-		let line = from
+		let l = from
 		let start = -1
-		for (; line < lines.length; line++) {
-			if (lines[line].trim().length > 0) {
-				return null
-			}
-			if (line > from + 2) {
-				return null
-			}
-			if (isAssistantMarkStart(lines[line])) {
-				start = line
+		for (; l < lines.length; l++) {
+			if (isAssistantMarkStart(lines[l])) {
+				start = l
 				break
+			}
+
+			if (lines[l].trim().length > 0) {
+				return null
+			}
+			if (l > from + 2) {
+				// too far
+				return null
 			}
 		}
 		if (start === -1) return null
+		console.debug('start', start, lines[start])
 		let end = -1
-		for (; line < lines.length; line++) {
-			if (lines[line].trim().length > 0) {
-				return null
-			}
-			if (line > start + 2) {
-				return null
-			}
-			if (isAssistantMarkEnd(lines[line])) {
-				end = line
+		for (l = start + 1; l < lines.length; l++) {
+			if (isAssistantMarkEnd(lines[l])) {
+				end = l
 				break
+			}
+			if (lines[l].trim().length > 0) {
+				return null
+			}
+			if (l > start + 3) {
+				// too far
+				return null
 			}
 		}
 		return { start, end }
@@ -273,7 +277,7 @@ export default class AIZhipuPlugin extends Plugin {
 		console.debug('block.content', block.content)
 		console.debug('selection', selection)
 
-		const nextEmptyBlock = this.findNextEmptyAssistBlock(editor, block.end)
+		const nextEmptyBlock = this.findNextEmptyAssistBlock(editor, block.end + 1)
 		if (nextEmptyBlock) {
 			console.debug('nextEmptyBlock', nextEmptyBlock)
 			// clear next empty block
@@ -282,6 +286,7 @@ export default class AIZhipuPlugin extends Plugin {
 				{ line: nextEmptyBlock.start, ch: 0 },
 				{ line: nextEmptyBlock.end, ch: editor.getLine(nextEmptyBlock.end).length }
 			)
+			new Notice('清理后面的空区块')
 		}
 
 		let prompt = selection
