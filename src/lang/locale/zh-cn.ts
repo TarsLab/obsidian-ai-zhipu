@@ -2,8 +2,6 @@
 
 export default {
 	// command
-	'Generate text from the selected text': '选定文本来生成内容',
-	'Generate image from the selected text': '选定文本来生成图片',
 
 	// main.ts
 	'create folder': '创建文件夹',
@@ -12,16 +10,12 @@ export default {
 	'Cannot find selected text.': '请先选定文本',
 
 	// setting-tab.ts
-	'ZhipuAI API': 'ZhipuAI 接口',
-
 	'Zhipu API key': '智谱 API key',
 	'Obtain key from https://open.bigmodel.cn': '从 https://open.bigmodel.cn 获取 key',
 	'Enter your key': '输入你的 key',
 
-	Model: '通用大模型',
-	'Select the model to use for content generation': '选择用于内容生成的通用大模型',
-
-	'Prompt File': '提示词文件',
+	'Prompt Template File': '提示词模板文件',
+	"Template file support both Chinese and English languages, with the default being the software's language setting.": '模版文件支持中文语言和英文语言，默认是软件的语言设置',
 	PromptTemplates: '提示词模板',
 
 	// modal.ts

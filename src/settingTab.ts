@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import { promptEnFileName, promptZhFileName, t } from './lang/helper'
 import AIZhipuPlugin from './main'
+import { DEFAULT_SETTINGS } from './settings'
 
 export class AIZhipuSettingTab extends PluginSettingTab {
 	plugin: AIZhipuPlugin
@@ -13,7 +14,6 @@ export class AIZhipuSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this
 		containerEl.empty()
-		containerEl.createEl('h2', { text: t('ZhipuAI API') })
 
 		new Setting(containerEl)
 			.setName(t('Zhipu API key'))
@@ -29,41 +29,21 @@ export class AIZhipuSettingTab extends PluginSettingTab {
 			)
 
 		new Setting(containerEl)
-			.setName(t('Model'))
-			.setDesc(t('Select the model to use for content generation'))
+			.setName(t('Prompt Template File'))
+			.setDesc(
+				t(
+					"Template file support both Chinese and English languages, with the default being the software's language setting."
+				)
+			)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption('glm-4', 'glm-4')
-					.addOption('glm-3-turbo', 'glm-3-turbo')
-					.setValue(this.plugin.settings.model)
+					.addOption(promptZhFileName, `${DEFAULT_SETTINGS.rootFolder}/${promptZhFileName}`)
+					.addOption(promptEnFileName, `${DEFAULT_SETTINGS.rootFolder}/${promptEnFileName}`)
+					.setValue(this.plugin.settings.promptFileName ? this.plugin.settings.promptFileName : t('PromptTemplates'))
 					.onChange(async (value) => {
-						this.plugin.settings.model = value
+						this.plugin.settings.promptFileName = value
 						await this.plugin.saveSettings()
 					})
 			)
-
-		// new Setting(containerEl)
-		// 	.setName(t('Image Model'))
-		// 	.setDesc(t('Select the model to use for image generation'))
-		// 	.addDropdown((dropdown) =>
-		// 		dropdown
-		// 			.addOption('cogview-3', 'cogview-3')
-		// 			.setValue(this.plugin.settings.imageModel)
-		// 			.onChange(async (value) => {
-		// 				this.plugin.settings.imageModel = value
-		// 				await this.plugin.saveSettings()
-		// 			})
-		// 	)
-
-		new Setting(containerEl).setName(t('Prompt File')).addDropdown((dropdown) =>
-			dropdown
-				.addOption(promptZhFileName, promptZhFileName)
-				.addOption(promptEnFileName, promptEnFileName)
-				.setValue(this.plugin.settings.promptFileName ? this.plugin.settings.promptFileName : t('PromptTemplates'))
-				.onChange(async (value) => {
-					this.plugin.settings.promptFileName = value
-					await this.plugin.saveSettings()
-				})
-		)
 	}
 }
