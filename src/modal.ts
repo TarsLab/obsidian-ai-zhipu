@@ -48,12 +48,9 @@ export class PromptTemplatesModel extends FuzzySuggestModal<PromptTemplate> {
 				style: 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
 			}
 		})
-
-		// console.log('matches', template.match.matches);
 	}
 
 	onChooseItem(template: PromptTemplate, evt: MouseEvent | KeyboardEvent) {
-		// new Notice(`Selected ${book.title}`)
 		this.onChoose(template)
 	}
 }
@@ -76,8 +73,8 @@ export class ApiCallInfoModal extends Modal {
 		contentEl.createEl('h3', {
 			text: 'Messages'
 		})
-		const { params, result, error } = this.info
-		for (const msg of params.messages) {
+		const { messages, result, error } = this.info
+		for (const msg of messages) {
 			if (msg.content) {
 				contentEl.createEl('h5', {
 					text: msg.role

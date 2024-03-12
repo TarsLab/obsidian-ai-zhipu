@@ -1,6 +1,7 @@
 import Handlebars from 'handlebars'
 import { Editor, MarkdownView, Notice, Plugin, TFile, normalizePath } from 'obsidian'
-import { ApiCallInfo, newApiCallInfo } from './apiCall'
+import { RunnableToolFunctionWithParse } from 'openai/lib/RunnableFunction'
+import { ApiCallInfo, newApiCallInfo, toChatCompletionStreamParams } from './apiCall'
 import { ZhipuAI } from './client'
 import { promptEnFileName, promptZhFileName, t } from './lang/helper'
 import {
@@ -17,7 +18,7 @@ import {
 	isUserMarkStart
 } from './mark'
 import { ApiCallInfoModal, PromptTemplatesModel } from './modal'
-import { PromptTemplate, getTemplates, toPromptTemplate } from './prompt'
+import { ChatParams, ImageGenerateParams, KnowledgeChatParams, PromptTemplate, getTemplates } from './prompt'
 import { promptEn } from './promptEn'
 import { promptZh } from './promptZh'
 import { AIZhipuSettingTab } from './settingTab'
@@ -32,32 +33,17 @@ export default class AIZhipuPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings()
 
-		console.log('loading AI Zhipu plugin...')
+		console.debug('loading AI Zhipu plugin...')
 		await this.createPromptFileIfNotExist()
 
 		this.addCommand({
-			id: 'text-selected',
-			name: 'Generate text from the selected text / current ✨block / current line',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				if (this.checkApiKey() === false) return
-				this.generateText(editor)
-			}
-		})
-
-		this.addCommand({
-			id: 'img-selected',
-			name: t('Generate image from the selected text'),
+			id: 'generate',
+			name: 'Generate content from the selected text / current block✨ / current line',
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				if ((this.checkApiKey() && this.checkSelection(editor)) === false) return
-				await this.generateImage(editor)
-			}
-		})
-
-		this.addCommand({
-			id: 'text-selected-template',
-			name: 'Generate text using template from the selected text ',
-			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				if (this.checkApiKey() === false) return
+				if (this.settings.apiKey.length <= 1) {
+					new Notice(t('ZhipuAI API Key is not provided.'))
+					return
+				}
 				const onChoose = (template: PromptTemplate) => {
 					this.generateText(editor, template)
 				}
@@ -68,7 +54,7 @@ export default class AIZhipuPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'select-block',
-			name: 'Select ✨block',
+			name: 'Select block✨',
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const block = this.findCurrentBlock(editor)
 				if (block) {
@@ -136,8 +122,7 @@ export default class AIZhipuPlugin extends Plugin {
 		const fileContent = templateFile
 			? await this.app.vault.cachedRead(templateFile as TFile)
 			: this.getPromptFileContent()
-		const templates = getTemplates(fileContent)
-		return templates.map(toPromptTemplate)
+		return getTemplates(fileContent)
 	}
 
 	getPromptFileContent() {
@@ -163,10 +148,10 @@ export default class AIZhipuPlugin extends Plugin {
 		const fileText = editor.getValue()
 		const lines = fileText.split('\n')
 		const current = editor.getCursor('to').line // TODO
-		console.log('cursor_from', editor.getCursor('from').line, editor.getCursor('from').ch)
-		console.log('cursor_to', editor.getCursor('to').line, editor.getCursor('to').ch)
-		console.log('cursor_head', editor.getCursor('head').line, editor.getCursor('head').ch)
-		console.log('cursor_anchor', editor.getCursor('anchor').line, editor.getCursor('anchor').ch)
+		console.debug('cursor_from', editor.getCursor('from').line, editor.getCursor('from').ch)
+		console.debug('cursor_to', editor.getCursor('to').line, editor.getCursor('to').ch)
+		console.debug('cursor_head', editor.getCursor('head').line, editor.getCursor('head').ch)
+		console.debug('cursor_anchor', editor.getCursor('anchor').line, editor.getCursor('anchor').ch)
 
 		// 向上找 start 标记， 而且不能有 end 标记
 		let start = isMarkEnd(lines[current]) ? current - 1 : current // 如果当前行是end标记，那么从上一行开始找。
@@ -174,7 +159,7 @@ export default class AIZhipuPlugin extends Plugin {
 			if (isMarkStart(lines[start])) break
 			if (isMarkEnd(lines[start])) return null
 		}
-		console.log('start', start, lines[start])
+		console.debug('start', start, lines[start])
 
 		// 向下找 end 标记，而且不能有 start 标记
 		let end = start === current ? current + 1 : current // 如果当前行是start标记，那么从下一行开始找。
@@ -183,7 +168,7 @@ export default class AIZhipuPlugin extends Plugin {
 			if (isMarkStart(lines[end])) return null
 		}
 
-		console.log('end', end, lines[end])
+		console.debug('end', end, lines[end])
 		if (start === -1 || end === lines.length) {
 			return null
 		}
@@ -233,7 +218,7 @@ export default class AIZhipuPlugin extends Plugin {
 		return { start, end }
 	}
 
-	async generateText(editor: Editor, template?: PromptTemplate) {
+	async generateText(editor: Editor, template: PromptTemplate) {
 		let block = this.findCurrentBlock(editor)
 
 		if (!block) {
@@ -276,7 +261,7 @@ export default class AIZhipuPlugin extends Plugin {
 			return
 		}
 
-		console.log('block', block)
+		console.debug('block', block)
 
 		// 找 comment
 
@@ -285,12 +270,12 @@ export default class AIZhipuPlugin extends Plugin {
 			{ line: block.end - 1, ch: editor.getLine(block.end - 1).length }
 		)
 		const selection = editor.getSelection()
-		console.log('block.content', block.content)
-		console.log('selection', selection)
+		console.debug('block.content', block.content)
+		console.debug('selection', selection)
 
 		const nextEmptyBlock = this.findNextEmptyAssistBlock(editor, block.end)
 		if (nextEmptyBlock) {
-			console.log('nextEmptyBlock', nextEmptyBlock)
+			console.debug('nextEmptyBlock', nextEmptyBlock)
 			// clear next empty block
 			editor.replaceRange(
 				'',
@@ -299,44 +284,90 @@ export default class AIZhipuPlugin extends Plugin {
 			)
 		}
 
-		// eslint-disable-next-line no-constant-condition
-		// if ('a' + 'b' === 'ab') return
-
 		let prompt = selection
-		if (template) {
-			const templateFn = Handlebars.compile(template.template)
-			prompt = templateFn({ selection })
-		}
+		const templateFn = Handlebars.compile(template.template)
+		prompt = templateFn({ selection })
 		console.debug('prompt', prompt)
+		console.debug('template', template)
 
 		let LnToWrite = block.end
 
-		this.apiCallInfo = newApiCallInfo({ model: this.settings.model, messages: [{ role: 'user', content: prompt }] })
+		const onConnect = () => {
+			editor.replaceRange(`\n${ASSISTANT_MARK_START}\n`, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
+			LnToWrite = LnToWrite + 2
+		}
+		const onContent = (diff: string) => {
+			const lines = diff.split('\n')
+			if (lines.length > 1) {
+				editor.replaceRange(diff, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
+				LnToWrite = LnToWrite + lines.length - 1
+			} else {
+				this.setLineThenScroll(editor, LnToWrite, diff)
+			}
+		}
+
+		this.apiCallInfo = newApiCallInfo(template.params, [{ role: 'user', content: prompt }])
 		try {
 			const client = await this.getClient()
-			const runner = await client.beta.chat.completions
-				.stream(this.apiCallInfo.params)
-				.on('connect', () => {
-					editor.replaceRange(`\n${ASSISTANT_MARK_START}\n`, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
-					LnToWrite = LnToWrite + 2
+
+			if (ImageGenerateParams.is(template.params)) {
+				const response = await client.images.generate({
+					prompt: prompt,
+					model: this.apiCallInfo.params.model
 				})
-				.on('content', (diff) => {
-					const lines = diff.split('\n')
-					if (lines.length > 1) {
-						editor.replaceRange(diff, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
-						LnToWrite = LnToWrite + lines.length - 1
-					} else {
-						this.setLineThenScroll(editor, LnToWrite, diff)
+				console.debug('response', response)
+				const url = response.data[0]?.url
+				if (url) {
+					onConnect()
+					onContent(`![](${url})\n`)
+				} else {
+					onConnect()
+					onContent(`生成图片失败`)
+				}
+
+				this.apiCallInfo.endTime = new Date()
+				this.apiCallInfo.result = response.data[0]?.url || null
+			} else if (KnowledgeChatParams.is(template.params)) {
+				const tools = [
+					{
+						type: 'retrieval',
+						retrieval: {
+							knowledge_id: template.params.knowledge_id,
+							prompt_template: template.params.prompt_template
+						}
 					}
-				})
-			const final = await runner.finalChatCompletion()
+				] as unknown as RunnableToolFunctionWithParse<any>[]
+				console.debug('prompt_template', template.params.prompt_template)
+				const knowledgeChat = await client.beta.chat.completions
+					.runTools({
+						...toChatCompletionStreamParams(this.apiCallInfo),
+						stream: true,
+						tools: tools
+					})
+					.on('connect', onConnect)
+					.on('content', (diff) => onContent(diff))
+
+				const final = await knowledgeChat.finalChatCompletion()
+				const content = final.choices[0].message.content
+				this.apiCallInfo.endTime = new Date()
+				this.apiCallInfo.result = content
+				this.apiCallInfo.usage = final.usage || null
+			} else if (ChatParams.is(template.params)) {
+				const chat = await client.beta.chat.completions
+					.stream(toChatCompletionStreamParams(this.apiCallInfo))
+					.on('connect', onConnect)
+					.on('content', (diff) => onContent(diff))
+
+				const final = await chat.finalChatCompletion()
+				const content = final.choices[0].message.content
+				this.apiCallInfo.endTime = new Date()
+				this.apiCallInfo.result = content
+				this.apiCallInfo.usage = final.usage || null
+			} else {
+				throw new Error('Unknown template')
+			}
 
 			this.insertNewLineThenScroll(editor, LnToWrite, ASSISTANT_MARK_END)
-
-			const content = final.choices[0].message.content
-			this.apiCallInfo.endTime = new Date()
-			this.apiCallInfo.result = content
-			this.apiCallInfo.usage = final.usage || null
 		} catch (error) {
 			console.error('error', error)
 			this.apiCallInfo.error = `${error}`
@@ -358,49 +389,5 @@ export default class AIZhipuPlugin extends Plugin {
 		editor.setLine(LnToWrite, textLine)
 		editor.setCursor({ line: LnToWrite, ch: textLine.length })
 		editor.scrollIntoView({ from: editor.getCursor('from'), to: editor.getCursor('to') })
-	}
-
-	async generateImage(editor: Editor) {
-		const prompt = editor.getSelection()
-		const currentLn = editor.getCursor('to').line
-		if (prompt.length < 1) throw new Error('Cannot find prompt.')
-		if (this.settings.apiKey.length <= 1) throw new Error('ZhipuAI API Key is not provided.')
-
-		const newPrompt = prompt
-
-		let LnToWrite = currentLn + 1
-		editor.setLine(LnToWrite++, '\n')
-		const client = await this.getClient()
-
-		const indicator = 'AI Zhipu is Thinking'
-		editor.setLine(LnToWrite, indicator)
-
-		const response = await client.images.generate({
-			prompt: newPrompt,
-			model: this.settings.imageModel
-		})
-		console.log('response', response)
-		const url = response.data[0]?.url
-		if (url) {
-			editor.setLine(LnToWrite, `![](${url})\n`)
-		} else {
-			editor.setLine(LnToWrite, `生成图片失败`)
-		}
-	}
-
-	checkApiKey() {
-		if (this.settings.apiKey.length <= 1) {
-			new Notice(t('ZhipuAI API Key is not provided.'))
-			return false
-		}
-		return true
-	}
-
-	checkSelection(editor: Editor) {
-		if (editor.getSelection().length < 1) {
-			new Notice(t('Cannot find selected text.'))
-			return false
-		}
-		return true
 	}
 }
