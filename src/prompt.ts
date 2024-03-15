@@ -1,7 +1,7 @@
-import * as yaml from 'js-yaml'
+import { isLeft } from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { PathReporter } from 'io-ts/PathReporter'
-import { isLeft } from 'fp-ts/Either'
+import * as yaml from 'js-yaml'
 import { isUserMarkEnd, isUserMarkStart } from './mark'
 
 export const Glm4 = 'glm-4',
@@ -35,9 +35,6 @@ export const ApiParams = t.union([ImageGenerateParams, ChatParams, KnowledgeChat
 
 export type ApiParams = t.TypeOf<typeof ApiParams>
 
-/**
- * comment做容错处理。如果comment解析失败，
- */
 export interface PromptTemplate {
 	readonly title: string
 	readonly params: ApiParams
