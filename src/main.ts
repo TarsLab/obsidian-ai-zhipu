@@ -85,7 +85,7 @@ export default class AIZhipuPlugin extends Plugin {
 				const promptFilePath = normalizePath(`${this.settings.rootFolder}/${this.settings.promptFileName}.md`)
 				const file = this.app.vault.getAbstractFileByPath(promptFilePath)
 				if (!file) {
-					new Notice(t('Cannot find prompt file.'))
+					new Notice(t('Cannot find prompt template file.'))
 					return
 				}
 				await this.app.workspace.openLinkText('', file.path, true)
