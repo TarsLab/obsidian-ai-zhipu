@@ -24,7 +24,7 @@ export default {
 	'Regenerate block': '重新生成区块',
 	'Failed to generate image': '生成图片失败',
 
-	// setting-tab.ts
+	// settingTab.ts
 	'Zhipu API key': '智谱 API key',
 	'Obtain key from https://open.bigmodel.cn': '从 https://open.bigmodel.cn 获取 key',
 	'Enter your key': '输入你的 key',

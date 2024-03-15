@@ -24,7 +24,7 @@ export default {
 	'Regenerate block': 'Regenerate block',
 	'Failed to generate image': 'Failed to generate image',
 
-	// setting-tab.ts
+	// settingTab.ts
 	'Zhipu API key': 'Zhipu API key',
 	'Obtain key from https://open.bigmodel.cn': 'Obtain key from https://open.bigmodel.cn',
 	'Enter your key': 'Enter your key',
