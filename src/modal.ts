@@ -98,7 +98,7 @@ export class ApiCallInfoModal extends Modal {
 		)
 		contentEl.createEl('div').createEl('p', {
 			attr: {
-				style: 'white-space: pre-wrap;'
+				style: 'white-space: pre-wrap; font-family: monospace;'
 			}
 		}).innerHTML = timeInfo
 
@@ -140,7 +140,7 @@ export class ApiCallInfoModal extends Modal {
 			const { prompt_tokens, completion_tokens, total_tokens } = usage
 			contentEl.createEl('div').createEl('p', {
 				attr: {
-					style: 'white-space: pre-wrap;'
+					style: 'white-space: pre-wrap; font-family: monospace;'
 				}
 			}).innerHTML = usageTemplateFn(
 				formatTokenNumber(prompt_tokens),
