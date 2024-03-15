@@ -38,7 +38,7 @@ export default class AIZhipuPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'generate',
-			name: 'Generate content from the selected text / current block✨ / current line',
+			name: t('Generate from the selected text / line / block'),
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				if (this.settings.apiKey.length <= 1) {
 					new Notice(t('ZhipuAI API Key is not provided.'))
@@ -48,33 +48,47 @@ export default class AIZhipuPlugin extends Plugin {
 					this.generateText(editor, template)
 				}
 				const promptTemplates = await this.fetchPromptTemplates()
-				new PromptTemplatesModel(this.app, promptTemplates, onChoose).open()
+				new PromptTemplatesModel(this.app, promptTemplates, onChoose, this.apiCallInfo).open()
 			}
 		})
 
 		this.addCommand({
 			id: 'select-block',
-			name: 'Select block✨',
+			name: t('Select ✨block✨'),
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const block = this.findCurrentBlock(editor)
 				if (block) {
 					const { start, end } = block
 					editor.setSelection({ line: start + 1, ch: 0 }, { line: end - 1, ch: editor.getLine(end - 1).length })
 				} else {
-					new Notice('Cannot find a valid block.')
+					new Notice(t('Cannot find a valid block.'))
 				}
 			}
 		})
 
 		this.addCommand({
-			id: 'show-last-api-call',
-			name: 'Show last API call in this session',
+			id: 'show-chat-detail',
+			name: t('Show the chat details'),
 			callback: () => {
 				if (!this.apiCallInfo) {
-					new Notice('No API call yet.')
+					new Notice(t('No chat in this session yet.'))
 					return
 				}
 				new ApiCallInfoModal(this.app, this.apiCallInfo).open()
+			}
+		})
+
+		this.addCommand({
+			id: 'open-template-file',
+			name: t('Open prompt template file'),
+			callback: async () => {
+				const promptFilePath = normalizePath(`${this.settings.rootFolder}/${this.settings.promptFileName}.md`)
+				const file = this.app.vault.getAbstractFileByPath(promptFilePath)
+				if (!file) {
+					new Notice(t('Cannot find prompt file.'))
+					return
+				}
+				await this.app.workspace.openLinkText('', file.path, true)
 			}
 		})
 		// This adds a settings tab so the user can configure various aspects of the plugin
@@ -86,19 +100,19 @@ export default class AIZhipuPlugin extends Plugin {
 	async createPromptFileIfNotExist() {
 		if (!(await this.app.vault.adapter.exists(normalizePath(this.settings.rootFolder)))) {
 			await this.app.vault.createFolder(this.settings.rootFolder)
-			new Notice(t('create folder') + ' ' + this.settings.rootFolder)
+			new Notice(t('Create template folder') + ' ' + this.settings.rootFolder)
 		}
 
 		const promptEnFilePath = normalizePath(`${this.settings.rootFolder}/${promptEnFileName}.md`)
 		if (!(await this.app.vault.adapter.exists(promptEnFilePath))) {
 			await this.app.vault.create(promptEnFilePath, promptEn)
-			new Notice(t('create file') + ' ' + promptEnFileName)
+			new Notice(t('Create template file') + ' ' + promptEnFileName)
 		}
 
 		const promptZhFilePath = normalizePath(`${this.settings.rootFolder}/${promptZhFileName}.md`)
 		if (!(await this.app.vault.adapter.exists(promptZhFilePath))) {
 			await this.app.vault.create(promptZhFilePath, promptZh)
-			new Notice(t('create file') + ' ' + promptZhFileName)
+			new Notice(t('Create template file') + ' ' + promptZhFileName)
 		}
 	}
 
@@ -116,16 +130,16 @@ export default class AIZhipuPlugin extends Plugin {
 		const templateFile = this.app.vault.getAbstractFileByPath(promptFilePath)
 		if (!templateFile) {
 			console.warn(`Cannot getAbstractFileByPath ${promptFilePath}`)
-			console.warn(`load prompt var`)
+			console.warn(`load preset prompt`)
 		}
 
 		const fileContent = templateFile
 			? await this.app.vault.cachedRead(templateFile as TFile)
-			: this.getPromptFileContent()
+			: this.getPresetPromptFileContent()
 		return getTemplates(fileContent)
 	}
 
-	getPromptFileContent() {
+	getPresetPromptFileContent() {
 		return this.settings.promptFileName === promptZhFileName ? promptZh : promptEn
 	}
 
@@ -147,11 +161,7 @@ export default class AIZhipuPlugin extends Plugin {
 	} | null {
 		const fileText = editor.getValue()
 		const lines = fileText.split('\n')
-		const current = editor.getCursor('to').line // TODO
-		console.debug('cursor_from', editor.getCursor('from').line, editor.getCursor('from').ch)
-		console.debug('cursor_to', editor.getCursor('to').line, editor.getCursor('to').ch)
-		console.debug('cursor_head', editor.getCursor('head').line, editor.getCursor('head').ch)
-		console.debug('cursor_anchor', editor.getCursor('anchor').line, editor.getCursor('anchor').ch)
+		const current = editor.getCursor('to').line
 
 		// 向上找 start 标记， 而且不能有 end 标记
 		let start = isMarkEnd(lines[current]) ? current - 1 : current // 如果当前行是end标记，那么从上一行开始找。
@@ -240,7 +250,7 @@ export default class AIZhipuPlugin extends Plugin {
 				const current = editor.getCursor('to').line
 				const lineContent = editor.getLine(current)
 				if (lineContent.trim().length === 0) {
-					new Notice('Please select some text.')
+					new Notice(t('Nothing was selected'))
 					return
 				}
 				block = {
@@ -257,11 +267,16 @@ export default class AIZhipuPlugin extends Plugin {
 			}
 		} else if (block.type === 'assistant') {
 			// 是 assistance block
-			new Notice('这是生成的区块。把选中的文件复制到这个区块外面，再执行。')
+			new Notice(
+				t(
+					'This is the block for generating content. Copy the selected text outside of this block, and then execute the command.'
+				),
+				1000 * 5
+			)
 			return
 		} else if (block.content.trim().length === 0) {
 			// block 是空的
-			new Notice('Block is empty.')
+			new Notice(t('Block is empty'))
 			return
 		}
 
@@ -286,7 +301,7 @@ export default class AIZhipuPlugin extends Plugin {
 				{ line: nextEmptyBlock.start, ch: 0 },
 				{ line: nextEmptyBlock.end, ch: editor.getLine(nextEmptyBlock.end).length }
 			)
-			new Notice('清理后面的空区块')
+			new Notice(t('Regenerate block'))
 		}
 
 		let prompt = selection
@@ -311,14 +326,14 @@ export default class AIZhipuPlugin extends Plugin {
 			}
 		}
 
-		this.apiCallInfo = newApiCallInfo(template.params, [{ role: 'user', content: prompt }])
+		this.apiCallInfo = newApiCallInfo(template, [{ role: 'user', content: prompt }])
 		try {
 			const client = await this.getClient()
 
 			if (ImageGenerateParams.is(template.params)) {
 				const response = await client.images.generate({
 					prompt: prompt,
-					model: this.apiCallInfo.params.model
+					model: this.apiCallInfo.template.params.model
 				})
 				console.debug('response', response)
 				const url = response.data[0]?.url
@@ -327,7 +342,7 @@ export default class AIZhipuPlugin extends Plugin {
 					onContent(`![](${url})\n`)
 				} else {
 					onConnect()
-					onContent(`生成图片失败`)
+					onContent(t('Failed to generate image'))
 				}
 
 				this.apiCallInfo.endTime = new Date()

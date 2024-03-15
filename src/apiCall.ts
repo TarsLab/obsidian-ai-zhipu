@@ -1,10 +1,10 @@
 import { ChatCompletionStreamParams } from 'openai/resources/beta/chat/completions'
-import { CompletionUsage } from 'openai/resources/completions'
-import { ApiParams, Glm4 } from './prompt'
 import { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
+import { CompletionUsage } from 'openai/resources/completions'
+import { Glm4, PromptTemplate } from './prompt'
 
 export interface ApiCallInfo {
-	params: ApiParams
+	template: PromptTemplate
 	messages: ChatCompletionMessageParam[]
 	result: string | null
 	usage: CompletionUsage | null
@@ -13,9 +13,9 @@ export interface ApiCallInfo {
 	endTime: Date | null
 }
 
-export const newApiCallInfo = (params: ApiParams, messages: ChatCompletionMessageParam[]): ApiCallInfo => {
+export const newApiCallInfo = (template: PromptTemplate, messages: ChatCompletionMessageParam[]): ApiCallInfo => {
 	return {
-		params,
+		template,
 		messages,
 		result: null,
 		error: null,
@@ -26,10 +26,10 @@ export const newApiCallInfo = (params: ApiParams, messages: ChatCompletionMessag
 }
 
 export const toChatCompletionStreamParams = (info: ApiCallInfo): ChatCompletionStreamParams => {
-	if (info.params.model === 'cogview-3') {
+	if (info.template.params.model === 'cogview-3') {
 		throw new Error('Not supported')
 	}
-	const { model = Glm4, temperature, top_p, max_tokens } = info.params
+	const { model = Glm4, temperature, top_p, max_tokens } = info.template.params
 	return {
 		model,
 		messages: info.messages,

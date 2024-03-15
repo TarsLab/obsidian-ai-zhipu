@@ -29,7 +29,7 @@ export class AIZhipuSettingTab extends PluginSettingTab {
 			)
 
 		new Setting(containerEl)
-			.setName(t('Prompt Template File'))
+			.setName(t('Prompt template file'))
 			.setDesc(
 				t(
 					"Template file support both Chinese and English languages, with the default being the software's language setting."

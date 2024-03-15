@@ -3,13 +3,13 @@ import dedent from 'ts-dedent'
 export const promptZh = dedent`
 # 提示词模版
 
-  [源码穿越的B站链接](https://space.bilibili.com/416606821)
-
-- if you want to use english prompt, please update setting in obsidian-ai-zhipu plugin.
-- 插件在打开选择模版的时候，去检查该文件的最后修改时间，有修改则重新加载模板。没有则在该目录下创建文件。
-- 请谨慎修改\`%%\`里面参数，不正确会导致接口服务失败，先阅读智谱的相关文档
-- 该文件的第一张 slide 是说明，以下的 slide 是正式内容。
-- 文件解析功能处于 beta 状态
+- If you want to use english prompt, please update setting in obsidian-ai-zhipu plugin.
+- 本文件按照幻灯片格式，用“---”来分隔每一页的内容
+- 第一页是说明，后面是正式的模板内容
+- \`##\` 是标题
+- \`%%\`里面是技术参数，参考[智谱AI的接口文档](https://open.bigmodel.cn/dev/api)
+-  在✨💡和💡✨之间的是模板内容，插件会把 \`{{selection}}\`替换为选中的文本，得到最终的提示词
+- 如果你想查看最终的提示词是否符合预期，或者更多技术参数，使用插件的“显示上次请求参数”功能
 
 ---
 
