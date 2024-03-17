@@ -55,36 +55,16 @@ const isDashDashDash = (line: string): boolean =>
 		.every((el) => el === '-') &&
 	line.indexOf('-') < 3
 
-const isNewline = (line: string): boolean => line.trim() === ''
-
 export const getTemplates = (fileContent: string): PromptTemplate[] => {
 	const lines: Line[] = fileContent.split('\n').map((el, index) => {
 		return { content: el, index }
 	})
 
-	const dividers: Line[] = []
-	for (let i = 0; i < lines.length; i++) {
-		if (isDashDashDash(lines[i].content)) {
-			const aboveIsNewline = lines[i - 1] ? isNewline(lines[i - 1].content) : false
-			const belowIsNewline = lines[i + 1] ? isNewline(lines[i + 1].content) : false
-			if (aboveIsNewline && belowIsNewline) {
-				dividers.push(lines[i])
-			}
-		}
-	}
-
-	const lastIndex = lines.length - 1
-	const slide_ranges: [number, number][] = []
-	for (let i = 0; i < dividers.length; i++) {
-		const start = dividers[i].index + 1
-		const end = dividers[i + 1] ? dividers[i + 1].index - 1 : lastIndex
-		if (end > start) {
-			slide_ranges.push([start, end])
-		}
-	}
-
-	const slides_lines = slide_ranges.map((range) => lines.slice(range[0], range[1] + 1))
-	const templates = slides_lines.map((slide) => parseTemplate(slide)).filter((el) => el !== null) as PromptTemplate[]
+	const dividers: Line[] = lines.filter((line) => isDashDashDash(line.content))
+	const slidesLines = dividers.map((divider, index) =>
+		lines.slice(divider.index + 1, dividers[index + 1] ? dividers[index + 1].index : undefined)
+	)
+	const templates = slidesLines.map((slide) => parseTemplate(slide)).filter((el) => el !== null) as PromptTemplate[]
 	return templates
 }
 
