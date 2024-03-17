@@ -1,7 +1,6 @@
 import dedent from 'ts-dedent'
 
 export const promptZh = dedent`
-# 提示词模版
 
 - If you wish to use English prompts, please adjust the settings accordingly.
 - 本文件按照 obsidian 的幻灯片格式，用“---”来分隔每一页的内容
