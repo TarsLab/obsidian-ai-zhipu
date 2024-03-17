@@ -11,7 +11,7 @@ AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate 
 
 ## How to use
 
-- Register an account on the ZhiPu website, obtain the API key, and enter it into the plugin settings.
+- Register an account on the [ZhiPu website](https://open.bigmodel.cn), obtain the API key, and enter it into the plugin settings.
 - Enter edit mode
 - Select the prompt, and activate the command "Generate from the selected text / line / block" ， then select the prompt template.
 
@@ -23,7 +23,7 @@ AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate 
 
 - View the details of the last chat in the chat details, including the prompt and token usage.
 
-![image](docs/images/show_chat_details.png)
+![image](docs/images/show_chat_detail.png)
 
 ## Install from Github
 
