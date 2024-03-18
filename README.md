@@ -11,6 +11,7 @@ AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate 
 
 ## How to use
 
+- When the plugin is initialized, it will automatically create a folder `Aizhipu` in the vault directory, and create prompt template files, with both Chinese and English templates.
 - Register an account on the [ZhiPu website](https://open.bigmodel.cn), obtain the API key, and enter it into the plugin settings.
 - Enter edit mode
 - Select the prompt, and activate the command "Generate from the selected text / line / block" ， then select the prompt template.
@@ -24,6 +25,12 @@ AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate 
 - View the details of the last chat in the chat details, including the prompt and token usage.
 
 ![image](docs/images/show_chat_detail.png)
+
+## Requirements
+
+- An API key from [ZhiPu AI](https://open.bigmodel.cn)
+- network connection when using the command "Generate from the selected text / line / block"
+- Using the ZhiPu API will incur charges. For detailed fee information, please refer to the [official ZhiPu website](https://open.bigmodel.cn). It is important to note that generating images from text consumes a significant number of tokens.
 
 ## Install from Github
 
