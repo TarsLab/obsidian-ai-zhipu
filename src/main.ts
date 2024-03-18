@@ -356,9 +356,9 @@ export default class AIZhipuPlugin extends Plugin {
 							prompt_template: template.params.prompt_template
 						}
 					}
-				] as unknown as RunnableToolFunctionWithParse<any>[]
+				] as object[] as RunnableToolFunctionWithParse<object>[] // 这里hack，因为 zhipu-ai 的函数调用类型和 openai 的类型定义不一样
 				console.debug('prompt_template', template.params.prompt_template)
-				const knowledgeChat = await client.beta.chat.completions
+				const knowledgeChat = client.beta.chat.completions
 					.runTools({
 						...toChatCompletionStreamParams(this.apiCallInfo),
 						stream: true,
@@ -373,7 +373,7 @@ export default class AIZhipuPlugin extends Plugin {
 				this.apiCallInfo.result = content
 				this.apiCallInfo.usage = final.usage || null
 			} else if (ChatParams.is(template.params)) {
-				const chat = await client.beta.chat.completions
+				const chat = client.beta.chat.completions
 					.stream(toChatCompletionStreamParams(this.apiCallInfo))
 					.on('connect', onConnect)
 					.on('content', (diff) => onContent(diff))
