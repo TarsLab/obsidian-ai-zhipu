@@ -128,14 +128,14 @@ export default class AIZhipuPlugin extends Plugin {
 	async fetchPromptTemplates() {
 		const promptFilePath = normalizePath(`${this.settings.rootFolder}/${this.settings.promptFileName}.md`)
 		const templateFile = this.app.vault.getAbstractFileByPath(promptFilePath)
-		if (!templateFile) {
+		let fileContent: string
+		if (templateFile instanceof TFile) {
+			fileContent = await this.app.vault.cachedRead(templateFile)
+		} else {
 			console.warn(`Cannot getAbstractFileByPath ${promptFilePath}`)
 			console.warn(`load preset prompt`)
+			fileContent = this.getPresetPromptFileContent()
 		}
-
-		const fileContent = templateFile
-			? await this.app.vault.cachedRead(templateFile as TFile)
-			: this.getPresetPromptFileContent()
 		return getTemplates(fileContent)
 	}
 
