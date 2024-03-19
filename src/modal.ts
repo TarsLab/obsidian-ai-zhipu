@@ -32,22 +32,22 @@ export class PromptTemplatesModel extends FuzzySuggestModal<PromptTemplate> {
 	renderSuggestion(template: FuzzyMatch<PromptTemplate>, el: HTMLElement) {
 		const title = template.item.title
 		let lastIndex = 0
-		let highlightedTitle = ''
 
+		const div = el.createEl('div')
 		// 遍历所有的匹配项
 		for (const match of template.match.matches) {
 			const before = title.slice(lastIndex, match[0])
 			const matched = title.slice(match[0], match[0] + match[1])
-			highlightedTitle += `${before}<strong>${matched}</strong>`
+			div.createEl('span', { text: before })
+			div.createEl('span', { text: matched, attr: { style: 'font-weight: bold;' } })
 			lastIndex = match[0] + match[1]
 		}
 
 		// 添加最后一个匹配项后面的文本
-		highlightedTitle += title.slice(lastIndex)
+		div.createEl('span', { text: title.slice(lastIndex) })
 
-		el.createEl('div').innerHTML = highlightedTitle
 		if (title === this.lastApiCall?.template.title) {
-			el.createEl('small', {
+			div.createEl('small', {
 				text: t('Last used')
 			})
 		}
@@ -91,16 +91,16 @@ export class ApiCallInfoModal extends Modal {
 		}
 
 		const timeInfoFn = new Function('startTime', 'endTime', 'duration', `return \`${t('TimeInfoTemplate')}\`;`)
-		const timeInfo = timeInfoFn(
-			formatDate(startTime),
-			endTime ? formatDate(endTime) : 'N/A',
-			endTime ? formatDuration(endTime.getTime() - startTime.getTime()) : 'N/A'
-		)
 		contentEl.createEl('div').createEl('p', {
+			text: timeInfoFn(
+				formatDate(startTime),
+				endTime ? formatDate(endTime) : 'N/A',
+				endTime ? formatDuration(endTime.getTime() - startTime.getTime()) : 'N/A'
+			),
 			attr: {
 				style: 'white-space: pre-wrap; font-family: monospace;'
 			}
-		}).innerHTML = timeInfo
+		})
 
 		if (result) {
 			contentEl.createEl('h4', {
@@ -139,14 +139,15 @@ export class ApiCallInfoModal extends Modal {
 			)
 			const { prompt_tokens, completion_tokens, total_tokens } = usage
 			contentEl.createEl('div').createEl('p', {
+				text: usageTemplateFn(
+					formatTokenNumber(prompt_tokens),
+					formatTokenNumber(completion_tokens),
+					formatTokenNumber(total_tokens)
+				),
 				attr: {
 					style: 'white-space: pre-wrap; font-family: monospace;'
 				}
-			}).innerHTML = usageTemplateFn(
-				formatTokenNumber(prompt_tokens),
-				formatTokenNumber(completion_tokens),
-				formatTokenNumber(total_tokens)
-			)
+			})
 		}
 
 		const detailsEl = contentEl.createEl('details')
