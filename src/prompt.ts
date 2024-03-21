@@ -1,7 +1,7 @@
 import { isLeft } from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { PathReporter } from 'io-ts/PathReporter'
-import * as yaml from 'js-yaml'
+import { parseYaml } from 'obsidian'
 import { isUserMarkEnd, isUserMarkStart } from './mark'
 
 export const Glm4 = 'glm-4',
@@ -115,7 +115,7 @@ const parseTemplate = (lines: Line[]): PromptTemplate | null => {
 
 const parseComment = (comment: string): ApiParams | undefined => {
 	try {
-		const commentObject = yaml.load(comment)
+		const commentObject = parseYaml(comment)
 		const decoded = ApiParams.decode(commentObject)
 		if (isLeft(decoded)) {
 			throw Error(`Could not validate data: ${PathReporter.report(decoded).join('\n')}`)
