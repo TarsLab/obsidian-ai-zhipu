@@ -1,9 +1,9 @@
 {
 	"id": "ai-zhipu",
 	"name": "AI Zhipu",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "1.0.0",
-	"description": "Using Zhipu AI by API key.",
+	"description": "Generate text using the ZhipuAI API.",
 	"author": "Tarslab",
 	"authorUrl": "https://github.com/tarslab",
 	"isDesktopOnly": false
