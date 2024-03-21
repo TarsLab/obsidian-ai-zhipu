@@ -17,7 +17,7 @@ import {
 	isUserMarkEnd,
 	isUserMarkStart
 } from './mark'
-import { ApiCallInfoModal, PromptTemplatesModel } from './modal'
+import { ApiCallInfoModal, PromptTemplatesModal } from './modal'
 import { ChatParams, ImageGenerateParams, KnowledgeChatParams, PromptTemplate, getTemplates } from './prompt'
 import { promptEn } from './promptEn'
 import { promptZh } from './promptZh'
@@ -48,7 +48,7 @@ export default class AIZhipuPlugin extends Plugin {
 					this.generateText(editor, template)
 				}
 				const promptTemplates = await this.fetchPromptTemplates()
-				new PromptTemplatesModel(this.app, promptTemplates, onChoose, this.apiCallInfo).open()
+				new PromptTemplatesModal(this.app, promptTemplates, onChoose, this.apiCallInfo).open()
 			}
 		})
 

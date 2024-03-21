@@ -4,7 +4,7 @@ import { t } from './lang/helper'
 import { ERROR_MARK } from './mark'
 import { PromptTemplate } from './prompt'
 
-export class PromptTemplatesModel extends FuzzySuggestModal<PromptTemplate> {
+export class PromptTemplatesModal extends FuzzySuggestModal<PromptTemplate> {
 	templates: PromptTemplate[]
 	onChoose: (result: PromptTemplate) => void
 	lastApiCall?: ApiCallInfo
