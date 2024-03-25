@@ -47,7 +47,7 @@ export class PromptTemplatesModal extends FuzzySuggestModal<PromptTemplate> {
 		div.createEl('span', { text: title.slice(lastIndex) })
 
 		if (title === this.lastApiCall?.template.title) {
-			div.createEl('small', {
+			el.createEl('small', {
 				text: t('Last used')
 			})
 		}
