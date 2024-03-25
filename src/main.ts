@@ -229,7 +229,8 @@ export default class AIZhipuPlugin extends Plugin {
 				return null
 			}
 		}
-		return { start, end }
+		if (end > start) return { start, end }
+		return null
 	}
 
 	async generateText(editor: Editor, template: PromptTemplate) {
