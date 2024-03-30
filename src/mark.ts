@@ -1,3 +1,4 @@
+export const LINE_BREAK = '  \n'	// 两个空格加换行符, hard line break in markdown
 export const USER_MARK_START = '✨💡'
 export const USER_MARK_END = '💡✨'
 export const ASSISTANT_MARK_START = '✨💬'

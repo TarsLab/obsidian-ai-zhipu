@@ -2,20 +2,16 @@ import Handlebars from 'handlebars'
 import { Editor, MarkdownView, Notice, Plugin, TFile, normalizePath } from 'obsidian'
 import { RunnableToolFunctionWithParse } from 'openai/lib/RunnableFunction'
 import { ApiCallInfo, newApiCallInfo, toChatCompletionStreamParams } from './apiCall'
+import { findCurrentBlock, findNextEmptyAssistBlock } from './block'
 import { ZhipuAI } from './client'
 import { promptEnFileName, promptZhFileName, t } from './lang/helper'
 import {
 	ASSISTANT_MARK_END,
 	ASSISTANT_MARK_START,
 	ERROR_MARK,
+	LINE_BREAK,
 	USER_MARK_END,
-	USER_MARK_START,
-	isAssistantMarkEnd,
-	isAssistantMarkStart,
-	isMarkEnd,
-	isMarkStart,
-	isUserMarkEnd,
-	isUserMarkStart
+	USER_MARK_START
 } from './mark'
 import { ApiCallInfoModal, PromptTemplatesModal } from './modal'
 import { ChatParams, ImageGenerateParams, KnowledgeChatParams, PromptTemplate, getTemplates } from './prompt'
@@ -56,7 +52,7 @@ export default class AIZhipuPlugin extends Plugin {
 			id: 'select-block',
 			name: t('Select ✨block✨'),
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				const block = this.findCurrentBlock(editor)
+				const block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
 				if (block) {
 					const { start, end } = block
 					editor.setSelection({ line: start + 1, ch: 0 }, { line: end - 1, ch: editor.getLine(end - 1).length })
@@ -153,88 +149,8 @@ export default class AIZhipuPlugin extends Plugin {
 		return client
 	}
 
-	findCurrentBlock(editor: Editor): {
-		type: 'user' | 'assistant'
-		content: string
-		start: number
-		end: number
-	} | null {
-		const fileText = editor.getValue()
-		const lines = fileText.split('\n')
-		const current = editor.getCursor('to').line
-
-		// 向上找 start 标记， 而且不能有 end 标记
-		let start = isMarkEnd(lines[current]) ? current - 1 : current // 如果当前行是end标记，那么从上一行开始找。
-		for (; start >= 0; start--) {
-			if (isMarkStart(lines[start])) break
-			if (isMarkEnd(lines[start])) return null
-		}
-		console.debug('start', start, lines[start])
-
-		// 向下找 end 标记，而且不能有 start 标记
-		let end = start === current ? current + 1 : current // 如果当前行是start标记，那么从下一行开始找。
-		for (; end < lines.length; end++) {
-			if (isMarkEnd(lines[end])) break
-			if (isMarkStart(lines[end])) return null
-		}
-
-		console.debug('end', end, lines[end])
-		if (start === -1 || end === lines.length) {
-			return null
-		}
-
-		const content = lines.slice(start + 1, end).join('\n')
-		if (isUserMarkStart(lines[start]) && isUserMarkEnd(lines[end]))
-			return { type: 'user', content: content, start, end }
-		if (isAssistantMarkStart(lines[start]) && isAssistantMarkEnd(lines[end]))
-			return { type: 'assistant', content: content, start, end }
-
-		return null
-	}
-
-	findAboveComment(editor: Editor) {}
-
-	findNextEmptyAssistBlock(editor: Editor, from: number) {
-		const fileText = editor.getValue()
-		const lines = fileText.split('\n')
-		let l = from
-		let start = -1
-		for (; l < lines.length; l++) {
-			if (isAssistantMarkStart(lines[l])) {
-				start = l
-				break
-			}
-
-			if (lines[l].trim().length > 0) {
-				return null
-			}
-			if (l > from + 2) {
-				// too far
-				return null
-			}
-		}
-		if (start === -1) return null
-		console.debug('start', start, lines[start])
-		let end = -1
-		for (l = start + 1; l < lines.length; l++) {
-			if (isAssistantMarkEnd(lines[l])) {
-				end = l
-				break
-			}
-			if (lines[l].trim().length > 0) {
-				return null
-			}
-			if (l > start + 3) {
-				// too far
-				return null
-			}
-		}
-		if (end > start) return { start, end }
-		return null
-	}
-
 	async generateText(editor: Editor, template: PromptTemplate) {
-		let block = this.findCurrentBlock(editor)
+		let block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
 
 		if (!block) {
 			const origin = editor.getSelection()
@@ -246,7 +162,9 @@ export default class AIZhipuPlugin extends Plugin {
 					start: editor.getCursor('from').line + 1,
 					end: editor.getCursor('to').line + 3
 				}
-				editor.replaceSelection(`\n${USER_MARK_START}\n${origin}\n${USER_MARK_END}\n`)
+				editor.replaceSelection(
+					LINE_BREAK + USER_MARK_START + LINE_BREAK + origin.trimEnd() + LINE_BREAK + USER_MARK_END + LINE_BREAK
+				)
 			} else {
 				const current = editor.getCursor('to').line
 				const lineContent = editor.getLine(current)
@@ -261,13 +179,12 @@ export default class AIZhipuPlugin extends Plugin {
 					end: current + 2
 				}
 				editor.replaceRange(
-					`${USER_MARK_START}\n${lineContent}\n${USER_MARK_END}`,
+					USER_MARK_START + LINE_BREAK + lineContent.trimEnd() + LINE_BREAK + USER_MARK_END,
 					{ line: current, ch: 0 },
 					{ line: current, ch: lineContent.length }
 				)
 			}
 		} else if (block.type === 'assistant') {
-			// 是 assistance block
 			new Notice(
 				t(
 					'This is the block for generating content. Copy the selected text outside of this block, and then execute the command.'
@@ -276,7 +193,6 @@ export default class AIZhipuPlugin extends Plugin {
 			)
 			return
 		} else if (block.content.trim().length === 0) {
-			// block 是空的
 			new Notice(t('Block is empty'))
 			return
 		}
@@ -293,7 +209,7 @@ export default class AIZhipuPlugin extends Plugin {
 		console.debug('block.content', block.content)
 		console.debug('selection', selection)
 
-		const nextEmptyBlock = this.findNextEmptyAssistBlock(editor, block.end + 1)
+		const nextEmptyBlock = findNextEmptyAssistBlock(editor.getValue().split('\n'), block.end + 1)
 		if (nextEmptyBlock) {
 			console.debug('nextEmptyBlock', nextEmptyBlock)
 			// clear next empty block
@@ -314,7 +230,10 @@ export default class AIZhipuPlugin extends Plugin {
 		let LnToWrite = block.end
 
 		const onConnect = () => {
-			editor.replaceRange(`\n${ASSISTANT_MARK_START}\n`, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
+			editor.replaceRange(LINE_BREAK + ASSISTANT_MARK_START + LINE_BREAK, {
+				line: LnToWrite,
+				ch: editor.getLine(LnToWrite).length
+			})
 			LnToWrite = LnToWrite + 2
 		}
 		const onContent = (diff: string) => {
@@ -340,10 +259,10 @@ export default class AIZhipuPlugin extends Plugin {
 				const url = response.data[0]?.url
 				if (url) {
 					onConnect()
-					onContent(`![](${url})\n`)
+					onContent(`![](${url})${LINE_BREAK}`)
 				} else {
 					onConnect()
-					onContent(t('Failed to generate image'))
+					onContent(t('Failed to generate image') + LINE_BREAK)
 				}
 
 				this.apiCallInfo.endTime = new Date()
@@ -388,17 +307,17 @@ export default class AIZhipuPlugin extends Plugin {
 				throw new Error('Unknown template')
 			}
 
-			this.insertNewLineThenScroll(editor, LnToWrite, ASSISTANT_MARK_END)
+			this.insertNewLineThenScroll(editor, LnToWrite, ASSISTANT_MARK_END + '  ')
 		} catch (error) {
 			console.error('error', error)
 			this.apiCallInfo.error = `${error}`
 			this.apiCallInfo.endTime = new Date()
-			this.insertNewLineThenScroll(editor, LnToWrite, `${ERROR_MARK} ${error}`)
+			this.insertNewLineThenScroll(editor, LnToWrite, `${ERROR_MARK} ${error}` + '  ')
 		}
 	}
 
 	insertNewLineThenScroll(editor: Editor, LnToWrite: number, text: string) {
-		editor.replaceRange(`\n${text}`, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
+		editor.replaceRange(LINE_BREAK + text, { line: LnToWrite, ch: editor.getLine(LnToWrite).length })
 		LnToWrite++
 		editor.setCursor({ line: LnToWrite, ch: editor.getLine(LnToWrite).length }) // 改到后面，不要到新的一行，方便连着用select block
 		editor.scrollIntoView({ from: editor.getCursor('from'), to: editor.getCursor('to') })
