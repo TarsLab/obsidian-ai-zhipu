@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-ai-zhipu",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Generate text using the ZhipuAI API.",
 	"main": "main.js",
 	"scripts": {
