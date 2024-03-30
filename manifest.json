@@ -1,7 +1,7 @@
 {
 	"id": "ai-zhipu",
 	"name": "AI Zhipu",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"minAppVersion": "1.0.0",
 	"description": "Generate text using the ZhipuAI API.",
 	"author": "Tarslab",
