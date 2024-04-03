@@ -14,9 +14,9 @@ export const promptEn = dedent`
 
 ## ✨ Generate Content
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 ---
 
@@ -26,9 +26,9 @@ export const promptEn = dedent`
 model: cogview-3
 %%
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 ---
 
@@ -50,8 +50,8 @@ prompt_template: |
   Do not repeat the question; start answering directly.
 %%
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 `
