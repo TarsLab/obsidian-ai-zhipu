@@ -70,23 +70,45 @@ export class ApiCallInfoModal extends Modal {
 		const { template, messages, startTime, endTime, result, error, usage } = this.info
 		const { contentEl } = this
 
-		contentEl.createEl('h1', {
-			text: template.title
-		})
-
-		for (const msg of messages) {
-			if (msg.content) {
-				// contentEl.createEl('h4', {
-				// 	text: msg.role
-				// })
-				contentEl.createEl('textarea', {
-					text: msg.content.toString(),
-					attr: {
-						style: 'width: 100%;',
-						readonly: true,
-						rows: 3
+		if ('multiRound' in template.params && template.params.multiRound) {
+			contentEl.createEl('h1', {
+				text: t('Multi Round Chat')
+			})
+			let round = 1
+			for (const msg of messages) {
+				if (msg.content) {
+					if (msg.role === 'user') {
+						contentEl.createEl('h4', {
+							text: t('Round') + ' ' + round + ' ' + t('Chat')
+						})
+						round++
 					}
-				})
+					contentEl.createEl('textarea', {
+						text: msg.content.toString(),
+						attr: {
+							style: 'width: 100%;',
+							readonly: true,
+							rows: 3
+						}
+					})
+				}
+			}
+		} else {
+			// single round
+			contentEl.createEl('h1', {
+				text: template.title
+			})
+			for (const msg of messages) {
+				if (msg.content) {
+					contentEl.createEl('textarea', {
+						text: msg.content.toString(),
+						attr: {
+							style: 'width: 100%;',
+							readonly: true,
+							rows: 3
+						}
+					})
+				}
 			}
 		}
 

@@ -16,3 +16,13 @@ export const isAssistantMarkEnd = (line: string) =>
 
 export const isMarkStart = (line: string) => isUserMarkStart(line) || isAssistantMarkStart(line)
 export const isMarkEnd = (line: string) => isUserMarkEnd(line) || isAssistantMarkEnd(line)
+export const isMark = (line: string) => isMarkStart(line) || isMarkEnd(line)
+
+// https://help.obsidian.md/Plugins/Slides
+export const isDashDashDash = (line: string): boolean =>
+	line.trim().startsWith('---') &&
+	line
+		.trim()
+		.split('')
+		.every((el) => el === '-') &&
+	line.indexOf('-') < 3
