@@ -1,3 +1,4 @@
+import { t } from './lang/helper'
 import {
 	isAssistantMarkEnd,
 	isAssistantMarkStart,
@@ -47,71 +48,49 @@ export const findMultiRoundRange = (lines: string[], end: number): MultiRoundRan
 }
 
 export const findPreMsgBlocks = (lines: string[], start: number, end: number): MsgBlock[] => {
-	// 多轮对话相对单轮对话，格式更严格。必须是userMsg, assistantMsg, userMsg, assistantMsg这样的顺序
-	const blocks: MsgBlock[] = []
 	let i = start
 	for (; i < lines.length; i++) {
 		if (isMark(lines[i])) {
-			if (!isUserMarkStart(lines[i])) {
-				throw new Error('Invalid start mark line ' + i)
+			if (isMarkEnd(lines[i])) {
+				throw new Error(t('Expect start mark, but found end mark at line ') + (i + 1))
 			}
 			break
 		}
 	}
+	const blocks: MsgBlock[] = []
 	do {
-		// 要么没有找到 userMsgBlock，要么找到了 userMsgBlock + assistantMsgBlock
-		const userMsgBlock = findUserMsgBlock(lines, i, end)
-		if (userMsgBlock === null) break
-
-		const assistantMsgBlock = findAssistantMsgBlock(lines, userMsgBlock.end + 1, end)
-		if (!assistantMsgBlock) {
-			throw new Error('Expect assistant msg block after line ' + userMsgBlock.end + 1 + ' but not found')
-		}
-		blocks.push(userMsgBlock)
-		blocks.push(assistantMsgBlock)
-		i = assistantMsgBlock.end + 1
+		const block = findMsgBlock(lines, i, end)
+		if (block === null) break
+		blocks.push(block)
+		i = block.end + 1
 	} while (i < end)
-
 	return blocks
 }
 
-export const findUserMsgBlock = (lines: string[], start: number, end: number): UserMsgBlock | null => {
+export const findMsgBlock = (lines: string[], start: number, end: number): MsgBlock | null => {
 	let l = start
 	for (; l < end; l++) {
-		if (isUserMarkStart(lines[l])) break
-		if (isMark(lines[l])) return null
+		if (isMarkStart(lines[l])) break
+		if (isMarkEnd(lines[l])) return null
 	}
 	if (l === end) return null
 	const blockStart = l
 	l++
 	for (; l < end; l++) {
-		if (isUserMarkEnd(lines[l])) break
-		if (isMark(lines[l])) return null
+		if (isMarkEnd(lines[l])) break
+		if (isMarkStart(lines[l])) return null
 	}
 	if (l === end || l <= blockStart + 1) return null
 	const content = lines.slice(blockStart + 1, l).join('\n')
-	return { _tag: 'user', content: content, start: blockStart, end: l }
+
+	if (isUserMarkStart(lines[blockStart]) && isUserMarkEnd(lines[l]))
+		return { _tag: 'user', content: content, start: blockStart, end: l }
+	if (isAssistantMarkStart(lines[blockStart]) && isAssistantMarkEnd(lines[l]))
+		return { _tag: 'assistant', content: content, start: blockStart, end: l }
+	return null
 }
 
-export const findAssistantMsgBlock = (lines: string[], start: number, end: number): AssistantMsgBlock | null => {
-	let l = start
-	for (; l < end; l++) {
-		if (isAssistantMarkStart(lines[l])) break
-		if (isMark(lines[l])) return null
-	}
-	if (l === end) return null
-	const blockStart = l
-	l++
-	for (; l < end; l++) {
-		if (isAssistantMarkEnd(lines[l])) break
-		if (isMark(lines[l])) return null
-	}
-	if (l === end || l <= blockStart + 1) return null
-	const content = lines.slice(blockStart + 1, l).join('\n')
-	return { _tag: 'assistant', content: content, start: blockStart, end: l }
-}
-
-export const findCurrentBlock = (lines: string[], current: number): UserMsgBlock | AssistantMsgBlock | null => {
+export const findBlockByCurrentLine = (lines: string[], current: number): UserMsgBlock | AssistantMsgBlock | null => {
 	// 向上找 start 标记， 而且不能有 end 标记
 	let start = isMarkEnd(lines[current]) ? current - 1 : current // 如果当前行是end标记，那么从上一行开始找。
 	for (; start >= 0; start--) {

@@ -70,45 +70,29 @@ export class ApiCallInfoModal extends Modal {
 		const { template, messages, startTime, endTime, result, error, usage } = this.info
 		const { contentEl } = this
 
-		if ('multiRound' in template.params && template.params.multiRound) {
-			contentEl.createEl('h1', {
-				text: t('Multi Round Chat')
-			})
-			let round = 1
-			for (const msg of messages) {
-				if (msg.content) {
-					if (msg.role === 'user') {
-						contentEl.createEl('h4', {
-							text: t('Round') + ' ' + round + ' ' + t('Chat')
-						})
-						round++
+		let round = 1
+		const isMultiRound = 'multiRound' in template.params && template.params.multiRound
+
+		contentEl.createEl('h1', {
+			text: isMultiRound ? t('Multi Round Chat') : template.title
+		})
+
+		for (const msg of messages) {
+			if (msg.content) {
+				if (msg.role === 'assistant') {
+					contentEl.createEl('h4', {
+						text: t('Round') + ' ' + round + ' ' + t('generate content')
+					})
+					round++
+				}
+				contentEl.createEl('textarea', {
+					text: msg.content.toString(),
+					attr: {
+						style: 'width: 100%;',
+						readonly: true,
+						rows: 3
 					}
-					contentEl.createEl('textarea', {
-						text: msg.content.toString(),
-						attr: {
-							style: 'width: 100%;',
-							readonly: true,
-							rows: 3
-						}
-					})
-				}
-			}
-		} else {
-			// single round
-			contentEl.createEl('h1', {
-				text: template.title
-			})
-			for (const msg of messages) {
-				if (msg.content) {
-					contentEl.createEl('textarea', {
-						text: msg.content.toString(),
-						attr: {
-							style: 'width: 100%;',
-							readonly: true,
-							rows: 3
-						}
-					})
-				}
+				})
 			}
 		}
 
@@ -126,14 +110,15 @@ export class ApiCallInfoModal extends Modal {
 
 		if (result) {
 			contentEl.createEl('h4', {
-				text: t('Response')
+				text: isMultiRound ? t('Round') + ' ' + round + ' ' + t('generate content') : t('Generate content')
 			})
+
 			contentEl.createEl('textarea', {
 				text: result,
 				attr: {
 					style: 'width: 100%;',
 					readonly: true,
-					rows: 5
+					rows: 3
 				}
 			})
 		}

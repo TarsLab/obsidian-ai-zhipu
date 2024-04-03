@@ -6,7 +6,7 @@ import { ApiCallInfo, newApiCallInfo, toChatCompletionStreamParams } from './api
 import {
 	MsgBlock,
 	UserMsgBlock,
-	findCurrentBlock,
+	findBlockByCurrentLine,
 	findMultiRoundRange,
 	findNextEmptyAssistBlock,
 	findPreMsgBlocks
@@ -59,8 +59,8 @@ export default class AIZhipuPlugin extends Plugin {
 						new Notice(e.message)
 						return
 					}
-					const round = preBlocks.length === 0 ? 1 : preBlocks.length / 2 + 1
-					new Notice(t('Round') + ' ' + round + ' ' + t('Chat'))
+					const round = preBlocks.filter(block => block._tag === 'assistant').length + 1
+					new Notice(t('Round') + ' ' + round + ' ' + t('generate content'))
 					this.generateText(editor, this.settings.multiRoundTemplate, preBlocks)
 				} else {
 					const onChoose = (template: PromptTemplate) => {
@@ -76,7 +76,7 @@ export default class AIZhipuPlugin extends Plugin {
 			id: 'select-block',
 			name: t('Select ✨block✨'),
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				const block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
+				const block = findBlockByCurrentLine(editor.getValue().split('\n'), editor.getCursor('to').line)
 				if (block) {
 					const { start, end } = block
 					editor.setSelection({ line: start + 1, ch: 0 }, { line: end - 1, ch: editor.getLine(end - 1).length })
@@ -205,7 +205,7 @@ export default class AIZhipuPlugin extends Plugin {
 	}
 
 	async generateText(editor: Editor, template: PromptTemplate, preBlocks: MsgBlock[] = []) {
-		let block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
+		let block = findBlockByCurrentLine(editor.getValue().split('\n'), editor.getCursor('to').line)
 
 		if (!block) {
 			if (editor.getSelection().trim().length > 0) {
