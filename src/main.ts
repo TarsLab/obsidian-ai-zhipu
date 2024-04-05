@@ -1,8 +1,16 @@
 import Handlebars from 'handlebars'
 import { Editor, MarkdownView, Notice, Plugin, TFile, normalizePath } from 'obsidian'
 import { RunnableToolFunctionWithParse } from 'openai/lib/RunnableFunction'
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 import { ApiCallInfo, newApiCallInfo, toChatCompletionStreamParams } from './apiCall'
-import { findCurrentBlock, findNextEmptyAssistBlock } from './block'
+import {
+	MsgBlock,
+	UserMsgBlock,
+	findBlockByCurrentLine,
+	findMultiRoundRange,
+	findNextEmptyAssistBlock,
+	findPreMsgBlocks
+} from './block'
 import { ZhipuAI } from './client'
 import { promptEnFileName, promptZhFileName, t } from './lang/helper'
 import {
@@ -40,11 +48,27 @@ export default class AIZhipuPlugin extends Plugin {
 					new Notice(t('ZhipuAI API Key is not provided.'))
 					return
 				}
-				const onChoose = (template: PromptTemplate) => {
-					this.generateText(editor, template)
+				const lines = editor.getValue().split('\n')
+				const current = editor.getCursor('to').line
+				const multiRoundDivider = findMultiRoundRange(lines, current)
+				if (multiRoundDivider) {
+					let preBlocks: MsgBlock[] = []
+					try {
+						preBlocks = findPreMsgBlocks(lines, multiRoundDivider.start, current)
+					} catch (e) {
+						new Notice(e.message)
+						return
+					}
+					const round = preBlocks.filter(block => block._tag === 'assistant').length + 1
+					new Notice(t('Round') + ' ' + round + ' ' + t('generate content'))
+					this.generateText(editor, this.settings.multiRoundTemplate, preBlocks)
+				} else {
+					const onChoose = (template: PromptTemplate) => {
+						this.generateText(editor, template)
+					}
+					const promptTemplates = await this.fetchPromptTemplates()
+					new PromptTemplatesModal(this.app, promptTemplates, onChoose, this.apiCallInfo).open()
 				}
-				const promptTemplates = await this.fetchPromptTemplates()
-				new PromptTemplatesModal(this.app, promptTemplates, onChoose, this.apiCallInfo).open()
 			}
 		})
 
@@ -52,7 +76,7 @@ export default class AIZhipuPlugin extends Plugin {
 			id: 'select-block',
 			name: t('Select ✨block✨'),
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
-				const block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
+				const block = findBlockByCurrentLine(editor.getValue().split('\n'), editor.getCursor('to').line)
 				if (block) {
 					const { start, end } = block
 					editor.setSelection({ line: start + 1, ch: 0 }, { line: end - 1, ch: editor.getLine(end - 1).length })
@@ -149,42 +173,52 @@ export default class AIZhipuPlugin extends Plugin {
 		return client
 	}
 
-	async generateText(editor: Editor, template: PromptTemplate) {
-		let block = findCurrentBlock(editor.getValue().split('\n'), editor.getCursor('to').line)
+	createBlockFromSelection(editor: Editor): UserMsgBlock {
+		const block: UserMsgBlock = {
+			_tag: 'user',
+			content: origin,
+			start: editor.getCursor('from').line + 1,
+			end: editor.getCursor('to').line + 3
+		}
+		editor.replaceSelection(
+			LINE_BREAK + USER_MARK_START + LINE_BREAK + origin.trimEnd() + LINE_BREAK + USER_MARK_END + LINE_BREAK
+		)
+		return block
+	}
+
+	createBlockFromLine(editor: Editor, current: number): UserMsgBlock {
+		const lineContent = editor.getLine(current)
+		if (lineContent.trim().length === 0) {
+			throw new Error('Nothing was selected')
+		}
+		editor.replaceRange(
+			USER_MARK_START + LINE_BREAK + lineContent.trimEnd() + LINE_BREAK + USER_MARK_END,
+			{ line: current, ch: 0 },
+			{ line: current, ch: lineContent.length }
+		)
+		return {
+			_tag: 'user',
+			content: lineContent,
+			start: current,
+			end: current + 2
+		}
+	}
+
+	async generateText(editor: Editor, template: PromptTemplate, preBlocks: MsgBlock[] = []) {
+		let block = findBlockByCurrentLine(editor.getValue().split('\n'), editor.getCursor('to').line)
 
 		if (!block) {
-			const origin = editor.getSelection()
-
-			if (origin.trim().length > 0) {
-				block = {
-					type: 'user',
-					content: origin,
-					start: editor.getCursor('from').line + 1,
-					end: editor.getCursor('to').line + 3
-				}
-				editor.replaceSelection(
-					LINE_BREAK + USER_MARK_START + LINE_BREAK + origin.trimEnd() + LINE_BREAK + USER_MARK_END + LINE_BREAK
-				)
+			if (editor.getSelection().trim().length > 0) {
+				block = this.createBlockFromSelection(editor)
 			} else {
 				const current = editor.getCursor('to').line
-				const lineContent = editor.getLine(current)
-				if (lineContent.trim().length === 0) {
+				if (editor.getLine(current).trim().length === 0) {
 					new Notice(t('Nothing was selected'))
 					return
 				}
-				block = {
-					type: 'user',
-					content: lineContent,
-					start: current,
-					end: current + 2
-				}
-				editor.replaceRange(
-					USER_MARK_START + LINE_BREAK + lineContent.trimEnd() + LINE_BREAK + USER_MARK_END,
-					{ line: current, ch: 0 },
-					{ line: current, ch: lineContent.length }
-				)
+				block = this.createBlockFromLine(editor, current)
 			}
-		} else if (block.type === 'assistant') {
+		} else if (block._tag === 'assistant') {
 			new Notice(
 				t(
 					'This is the block for generating content. Copy the selected text outside of this block, and then execute the command.'
@@ -222,8 +256,11 @@ export default class AIZhipuPlugin extends Plugin {
 		}
 
 		let prompt = selection
-		const templateFn = Handlebars.compile(template.template)
-		prompt = templateFn({ selection })
+		if (template.template && template.template.trim().length > 0 && template.template.trim() !== '{{selection}}') {
+			const templateFn = Handlebars.compile(template.template)
+			prompt = templateFn({ selection })
+		}
+
 		console.debug('prompt', prompt)
 		console.debug('template', template)
 
@@ -246,7 +283,12 @@ export default class AIZhipuPlugin extends Plugin {
 			}
 		}
 
-		this.apiCallInfo = newApiCallInfo(template, [{ role: 'user', content: prompt }])
+		const preMsg: ChatCompletionMessageParam[] = preBlocks.map((block) =>
+			block._tag === 'user' ? { role: 'user', content: block.content } : { role: 'assistant', content: block.content }
+		)
+
+		this.apiCallInfo = newApiCallInfo(template, [...preMsg, { role: 'user', content: prompt }])
+
 		try {
 			const client = await this.getClient()
 

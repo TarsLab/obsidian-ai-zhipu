@@ -2,7 +2,7 @@ import { isLeft } from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { PathReporter } from 'io-ts/PathReporter'
 import { parseYaml } from 'obsidian'
-import { isUserMarkEnd, isUserMarkStart } from './mark'
+import { isHorizontalRuler, isUserMarkEnd, isUserMarkStart } from './mark'
 
 export const Glm4 = 'glm-4',
 	Cogview3 = 'cogview-3',
@@ -13,7 +13,11 @@ export const ImageGenerateParams = t.type({
 })
 
 export const ChatParams = t.partial({
-	model: t.union([t.literal(Glm4), t.literal(Glm3Turbo)]),
+	multiRound: t.boolean,
+	model: t.keyof({
+		'glm-4': null,
+		'glm-3-turbo': null
+	}),
 	temperature: t.number,
 	top_p: t.number,
 	max_tokens: t.number
@@ -41,26 +45,22 @@ export interface PromptTemplate {
 	readonly template: string
 }
 
+export interface MultiRoundTemplate {
+	readonly title: string
+	readonly params: Required<ChatParams>
+	readonly template: string
+}
 interface Line {
 	index: number
 	content: string
 }
-
-// https://help.obsidian.md/Plugins/Slides
-const isDashDashDash = (line: string): boolean =>
-	line.trim().startsWith('---') &&
-	line
-		.trim()
-		.split('')
-		.every((el) => el === '-') &&
-	line.indexOf('-') < 3
 
 export const getTemplates = (fileContent: string): PromptTemplate[] => {
 	const lines: Line[] = fileContent.split('\n').map((el, index) => {
 		return { content: el, index }
 	})
 
-	const dividers: Line[] = lines.filter((line) => isDashDashDash(line.content))
+	const dividers: Line[] = lines.filter((line) => isHorizontalRuler(line.content))
 	const slidesLines = dividers.map((divider, index) =>
 		lines.slice(divider.index + 1, dividers[index + 1] ? dividers[index + 1].index : undefined)
 	)
@@ -94,11 +94,12 @@ const parseTemplate = (lines: Line[]): PromptTemplate | null => {
 			.trim()
 	}
 	console.debug('commentRaw', commentRaw)
-	const defaultParams: ChatParams = { model: Glm4 }
+	const defaultParams: ChatParams = { model: Glm4, multiRound: false }
 	const params = commentRaw ? parseComment(commentRaw) || defaultParams : defaultParams
 	if (!params.model) {
 		params.model = Glm4
 	}
+
 	const promptStart = lines.findIndex((line) => isUserMarkStart(line.content))
 	const promptEnd = lines.findLastIndex((line) => isUserMarkEnd(line.content))
 	if (promptStart === -1 || promptEnd === -1 || promptEnd <= promptStart) {

@@ -70,21 +70,27 @@ export class ApiCallInfoModal extends Modal {
 		const { template, messages, startTime, endTime, result, error, usage } = this.info
 		const { contentEl } = this
 
+		let round = 1
+		const isMultiRound = 'multiRound' in template.params && template.params.multiRound
+
 		contentEl.createEl('h1', {
-			text: template.title
+			text: isMultiRound ? t('Multi-round Conversation') : template.title
 		})
 
 		for (const msg of messages) {
 			if (msg.content) {
-				// contentEl.createEl('h4', {
-				// 	text: msg.role
-				// })
+				if (msg.role === 'assistant') {
+					contentEl.createEl('h4', {
+						text: t('Round') + ' ' + round + ' ' + t('generate content')
+					})
+					round++
+				}
 				contentEl.createEl('textarea', {
 					text: msg.content.toString(),
 					attr: {
 						style: 'width: 100%;',
 						readonly: true,
-						rows: 3
+						rows: msg.role === 'assistant' ? 3 : 1
 					}
 				})
 			}
@@ -104,14 +110,15 @@ export class ApiCallInfoModal extends Modal {
 
 		if (result) {
 			contentEl.createEl('h4', {
-				text: t('Response')
+				text: isMultiRound ? t('Round') + ' ' + round + ' ' + t('generate content') : t('Generate content')
 			})
+
 			contentEl.createEl('textarea', {
 				text: result,
 				attr: {
 					style: 'width: 100%;',
 					readonly: true,
-					rows: 5
+					rows: 3
 				}
 			})
 		}

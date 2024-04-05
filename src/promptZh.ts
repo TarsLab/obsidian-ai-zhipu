@@ -14,9 +14,9 @@ export const promptZh = dedent`
 
 ## ✨ 生成内容
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 ---
 
@@ -26,9 +26,9 @@ export const promptZh = dedent`
 model: cogview-3
 %%
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 ---
 
@@ -50,15 +50,15 @@ prompt_template: |
   不要复述问题，直接开始回答。
 %%
 
-✨💡
-{{selection}}
-💡✨
+✨💡  
+{{selection}}  
+💡✨  
 
 ---
 
 ## 🔠 翻译
 
-✨💡
-把以下文本翻译为中文：{{selection}}
-💡✨
+✨💡  
+把以下文本翻译为中文：{{selection}}  
+💡✨  
 `
