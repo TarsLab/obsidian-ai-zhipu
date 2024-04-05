@@ -9,6 +9,10 @@
 
 AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate content, create images from text, answer questions based on knowledge databases, and more AI capabilities. You can customize prompt template to build your own exclusive knowledge management system based on Zhipu AI.
 
+## New Features
+
+- Support for multi-round conversation. The start of a multi-round conversation is marked by two consecutive lines of horizontal lines, such as two lines of "---", and the end is marked by a single line of horizontal line.
+
 ## How to use
 
 - When the plugin is initialized, it will automatically create a folder `Aizhipu` in the vault directory, and create prompt template files, with both Chinese and English templates.
@@ -29,8 +33,13 @@ AI-zhipu is an Obsidian plugin that helps you utilize the Zhipu API to generate 
 ## Requirements
 
 - An API key from [ZhiPu AI](https://open.bigmodel.cn)
-- network connection when using the command "Generate from the selected text / line / block"
+- Network connection when using the command "Generate from the selected text / line / block"
 - Using the ZhiPu API will incur charges. For detailed fee information, please refer to the [official ZhiPu website](https://open.bigmodel.cn). It is important to note that generating images from text consumes a significant number of tokens.
+
+## Install from the marketplace
+
+1. Open the Obsidian community plugin marketplace
+2. Search for "AI Zhipu"
 
 ## Install from Github
 
