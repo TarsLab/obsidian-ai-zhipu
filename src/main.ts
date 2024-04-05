@@ -173,15 +173,15 @@ export default class AIZhipuPlugin extends Plugin {
 		return client
 	}
 
-	createBlockFromSelection(editor: Editor): UserMsgBlock {
+	createBlockFromSelection(editor: Editor, selection: string): UserMsgBlock {
 		const block: UserMsgBlock = {
 			_tag: 'user',
-			content: origin,
+			content: selection,
 			start: editor.getCursor('from').line + 1,
 			end: editor.getCursor('to').line + 3
 		}
 		editor.replaceSelection(
-			LINE_BREAK + USER_MARK_START + LINE_BREAK + origin.trimEnd() + LINE_BREAK + USER_MARK_END + LINE_BREAK
+			LINE_BREAK + USER_MARK_START + LINE_BREAK + selection.trimEnd() + LINE_BREAK + USER_MARK_END + LINE_BREAK
 		)
 		return block
 	}
@@ -208,8 +208,9 @@ export default class AIZhipuPlugin extends Plugin {
 		let block = findBlockByCurrentLine(editor.getValue().split('\n'), editor.getCursor('to').line)
 
 		if (!block) {
-			if (editor.getSelection().trim().length > 0) {
-				block = this.createBlockFromSelection(editor)
+			const selection = editor.getSelection()
+			if (selection.trim().length > 0) {
+				block = this.createBlockFromSelection(editor, selection)
 			} else {
 				const current = editor.getCursor('to').line
 				if (editor.getLine(current).trim().length === 0) {
