@@ -90,7 +90,7 @@ export class ApiCallInfoModal extends Modal {
 					attr: {
 						style: 'width: 100%;',
 						readonly: true,
-						rows: 3
+						rows: msg.role === 'assistant' ? 3 : 1
 					}
 				})
 			}

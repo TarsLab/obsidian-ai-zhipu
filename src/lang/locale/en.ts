@@ -26,7 +26,7 @@ export default {
 	'Block is empty': 'Block is empty',
 	'Regenerate block': 'Regenerate block',
 	'Failed to generate image': 'Failed to generate image',
-	'Round': 'Round',
+	Round: 'Round',
 	'generate content': 'generate content',
 
 	// settingTab.ts
@@ -34,10 +34,19 @@ export default {
 	'Obtain key from https://open.bigmodel.cn': 'Obtain key from https://open.bigmodel.cn',
 	'Enter your key': 'Enter your key',
 
+	'Single Round Chat': 'Single Round Chat',
 	'Prompt template file': 'Prompt template file',
 	"Template file support both Chinese and English languages, with the default being the software's language setting.":
 		"Template file support both Chinese and English languages, with the default being the software's language setting.",
 	PromptTemplates: 'PromptTemplates',
+	'The starting mark of Multi-round chat is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.':
+		'The starting mark of Multi-round chat is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.',
+	'Sampling temperature controls the randomness of the output. A higher value makes the output more random and creative; a lower value makes the output more stable or deterministic.':
+		'Sampling temperature controls the randomness of the output. A higher value makes the output more random and creative; a lower value makes the output more stable or deterministic.',
+	'0.1 means that the model decoder only considers taking tokens from the candidate set of the top 10% probability.':
+		'0.1 means that the model decoder only considers taking tokens from the candidate set of the top 10% probability.',
+	'The maximum number of tokens to generate in the completion':
+		'The maximum number of tokens to generate in the completion',
 
 	// modal.ts
 	Messages: 'Messages',
