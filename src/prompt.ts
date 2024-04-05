@@ -2,7 +2,7 @@ import { isLeft } from 'fp-ts/Either'
 import * as t from 'io-ts'
 import { PathReporter } from 'io-ts/PathReporter'
 import { parseYaml } from 'obsidian'
-import { isDashDashDash, isUserMarkEnd, isUserMarkStart } from './mark'
+import { isHorizontalRuler, isUserMarkEnd, isUserMarkStart } from './mark'
 
 export const Glm4 = 'glm-4',
 	Cogview3 = 'cogview-3',
@@ -14,7 +14,10 @@ export const ImageGenerateParams = t.type({
 
 export const ChatParams = t.partial({
 	multiRound: t.boolean,
-	model: t.union([t.literal(Glm4), t.literal(Glm3Turbo)]),
+	model: t.keyof({
+		'glm-4': null,
+		'glm-3-turbo': null
+	}),
 	temperature: t.number,
 	top_p: t.number,
 	max_tokens: t.number
@@ -42,6 +45,11 @@ export interface PromptTemplate {
 	readonly template: string
 }
 
+export interface MultiRoundTemplate {
+	readonly title: string
+	readonly params: Required<ChatParams>
+	readonly template: string
+}
 interface Line {
 	index: number
 	content: string
@@ -52,7 +60,7 @@ export const getTemplates = (fileContent: string): PromptTemplate[] => {
 		return { content: el, index }
 	})
 
-	const dividers: Line[] = lines.filter((line) => isDashDashDash(line.content))
+	const dividers: Line[] = lines.filter((line) => isHorizontalRuler(line.content))
 	const slidesLines = dividers.map((divider, index) =>
 		lines.slice(divider.index + 1, dividers[index + 1] ? dividers[index + 1].index : undefined)
 	)

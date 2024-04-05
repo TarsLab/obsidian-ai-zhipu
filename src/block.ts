@@ -2,7 +2,7 @@ import { t } from './lang/helper'
 import {
 	isAssistantMarkEnd,
 	isAssistantMarkStart,
-	isDashDashDash,
+	isHorizontalRuler,
 	isMark,
 	isMarkEnd,
 	isMarkStart,
@@ -33,16 +33,16 @@ export interface AssistantMsgBlock {
 
 export type MsgBlock = UserMsgBlock | AssistantMsgBlock
 
+/**
+ * 多轮对话的开始标记是连续两行的水平线，例如两行的“---”，结束标记是一行水平线
+ */
 export const findMultiRoundRange = (lines: string[], end: number): MultiRoundRange | null => {
 	let l = end
 	for (; l >= 0; l--) {
-		if (isDashDashDash(lines[l])) {
-			if (l > 0 && isDashDashDash(lines[l - 1])) {
-				// 如果上一行也是分割符，那么就是当前slide的开始了
-				// TODO, 把 comment 也找出来
-				return { _tag: 'multiRoundRange', start: l + 1, end: end - 1 }
-			}
-		}
+		if (isHorizontalRuler(lines[l])) break	
+	}
+	if (l >= 1 && isHorizontalRuler(lines[l - 1])) {
+		return { _tag: 'multiRoundRange', start: l + 1, end: end - 1 }
 	}
 	return null
 }

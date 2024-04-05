@@ -1,4 +1,4 @@
-import { PromptTemplate } from './prompt'
+import { MultiRoundTemplate } from './prompt'
 
 export interface ServerSettings {
 	apiKey: string
@@ -9,7 +9,7 @@ export interface ServerSettings {
 export interface PluginSettings extends ServerSettings {
 	rootFolder: string
 	promptFileName?: string
-	multiRoundTemplate: PromptTemplate
+	multiRoundTemplate: MultiRoundTemplate
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
