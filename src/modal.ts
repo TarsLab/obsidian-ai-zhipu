@@ -74,7 +74,7 @@ export class ApiCallInfoModal extends Modal {
 		const isMultiRound = 'multiRound' in template.params && template.params.multiRound
 
 		contentEl.createEl('h1', {
-			text: isMultiRound ? t('Multi Round Chat') : template.title
+			text: isMultiRound ? t('Multi-round Conversation') : template.title
 		})
 
 		for (const msg of messages) {

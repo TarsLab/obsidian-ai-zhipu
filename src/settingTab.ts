@@ -29,7 +29,7 @@ export class AIZhipuSettingTab extends PluginSettingTab {
 			)
 
 		containerEl.createEl('br')
-		containerEl.createEl('h3', { text: t('Single Round Chat') })
+		containerEl.createEl('h3', { text: t('Single Round Conversation') })
 
 		new Setting(containerEl)
 			.setName(t('Prompt template file'))
@@ -50,8 +50,8 @@ export class AIZhipuSettingTab extends PluginSettingTab {
 			)
 
 		containerEl.createEl('br')
-		containerEl.createEl('h3', { text: t('Multi Round Chat') })
-		containerEl.createEl('p', { text: t('The starting mark of Multi-round chat is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.') })
+		containerEl.createEl('h3', { text: t('Multi-round Conversation') })
+		containerEl.createEl('p', { text: t('The starting mark of Multi-round conversation is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.') })
 
 		new Setting(containerEl)
 			.setName('temperature')

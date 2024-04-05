@@ -34,7 +34,7 @@ export interface AssistantMsgBlock {
 export type MsgBlock = UserMsgBlock | AssistantMsgBlock
 
 /**
- * 多轮对话的开始标记是连续两行的水平线，例如两行的“---”，结束标记是一行水平线
+ * 多轮会话的开始标记是连续两行的水平线，例如两行的“---”，结束标记是一行水平线
  */
 export const findMultiRoundRange = (lines: string[], end: number): MultiRoundRange | null => {
 	let l = end

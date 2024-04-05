@@ -34,13 +34,13 @@ export default {
 	'Obtain key from https://open.bigmodel.cn': '从 https://open.bigmodel.cn 获取 key',
 	'Enter your key': '输入你的 key',
 
-	'Single Round Chat': '单轮对话',
+	'Single Round Conversation': '单轮会话',
 	'Prompt template file': '提示词模板文件',
 	"Template file support both Chinese and English languages, with the default being the software's language setting.":
 		'模版文件支持中文语言和英文语言，默认是软件的语言设置',
 	PromptTemplates: '提示词模板',
-	'The starting mark of Multi-round chat is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.':
-		'多轮对话的开始标记是连续两行的水平线，例如两行的“---”，结束标记是一行水平线',
+	'The starting mark of Multi-round conversation is two consecutive lines of horizontal dashes, such as two lines of "---", and the ending mark is a single line of horizontal dashes.':
+		'多轮会话的开始标记是连续两行的水平线，例如两行的“---”，结束标记是一行水平线',
 	'Sampling temperature controls the randomness of the output. A higher value makes the output more random and creative; a lower value makes the output more stable or deterministic.':
 		'采样温度，控制输出的随机性。值越大，会使输出更随机，更具创造性；值越小，输出会更加稳定或确定',
 	'0.1 means that the model decoder only considers taking tokens from the candidate set of the top 10% probability.':
@@ -49,7 +49,7 @@ export default {
 
 	// modal.ts
 	Messages: '发送消息',
-	'Multi Round Chat': '多轮对话',
+	'Multi-round Conversation': '多轮会话',
 	'Generate content': '生成内容',
 	'Last used': '上次使用',
 	TimeInfoTemplate: dedent`
