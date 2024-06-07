@@ -5,6 +5,9 @@ import { parseYaml } from 'obsidian'
 import { isHorizontalRuler, isUserMarkEnd, isUserMarkStart } from './mark'
 
 export const Glm4 = 'glm-4',
+	Glm40520 = 'glm-4-0520',
+	Glm4Air = 'glm-4-air',
+	Glm4Flash = 'glm-4-flash',
 	Cogview3 = 'cogview-3',
 	Glm3Turbo = 'glm-3-turbo'
 
@@ -16,7 +19,10 @@ export const ChatParams = t.partial({
 	multiRound: t.boolean,
 	model: t.keyof({
 		'glm-4': null,
-		'glm-3-turbo': null
+		'glm-4-0520': null,
+		'glm-4-air': null,
+		'glm-4-flash': null,
+		'glm-3-turbo': null,
 	}),
 	temperature: t.number,
 	top_p: t.number,
