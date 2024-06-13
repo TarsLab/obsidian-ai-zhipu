@@ -1,7 +1,7 @@
 <h4 align="center">
 	<p>
 		<b>English</b> |
-		<a href="README_zh.md">中文</a>
+		<a href="README.md">中文</a>
 	<p>
 </h4>
 
